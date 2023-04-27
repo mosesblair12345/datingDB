@@ -1,0 +1,43 @@
+<%- include("partials/header") %>
+<div class="container">
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="text-center">
+        <img src="/images/love.jpg" alt="love-img" class="img-fluid love-img" />
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <h1 class="form-heading">Find Your Real Connections</h1>
+      <form action="/next" method="post">
+        <p class="output-text"><%= text %></p>
+        <input class="form-control" type="text" name="dating" id="match" />
+        <input type="hidden" name="number" value="<%= add %>" />
+        <div class="form-text">
+          We'll never share your information with anyone else.
+        </div>
+        <div>
+          <div>
+            <% foundItem.forEach((user)=>{ %>
+            <p><%= user.name %> aged <%=user.age%> , <%= user.phone %></p>
+            <% }) %>
+          </div>
+          <% if(foundItem.length >= 1){ %>
+          <p><%= next %></p>
+          <% } %> <% if(foundItem.length < 1){ %>
+          <p><%= noOutput %></p>
+          <% } %>
+        </div>
+        <button class="btn btn-info btn-lg" type="submit">
+          <i class="fa-solid fa-check"></i> Submit
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+  }
+</script>
+
+<%- include("partials/footer") %>

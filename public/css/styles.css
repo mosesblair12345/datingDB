@@ -1,0 +1,27 @@
+body {
+  font-family: "Open Sans", sans-serif;
+  background-color: #ddffbb;
+}
+h1 {
+  font-family: "Playfair Display", serif;
+}
+.container {
+  padding: 70px 30px;
+}
+.form-heading {
+  margin-top: 10px;
+  margin-bottom: 30px;
+}
+.love-img {
+  margin-top: 25px;
+  width: 90%;
+}
+.btn {
+  margin-top: 30px;
+}
+.output-text {
+  margin-bottom: 20px;
+}
+.form-text {
+  margin-bottom: 15px;
+}

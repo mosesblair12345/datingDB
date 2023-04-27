@@ -1,0 +1,44 @@
+<%- include("partials/header") %>
+<div class="container">
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="text-center">
+        <img src="/images/love.jpg" alt="love-img" class="img-fluid love-img" />
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <h1 class="form-heading">Find Your Real Connections</h1>
+      <form action="/phone" method="post">
+        <p class="output-text"><%= text %></p>
+        <input class="form-control" type="text" name="dating" id="match" />
+        <div class="form-text">
+          We'll never share your information with anyone else.
+        </div>
+        <div>
+          <div>
+            <% foundItem.forEach((user)=>{ %>
+            <p>
+              <%= user.name %> aged <%=user.age %> , <%= user.county %> County,
+              <%=user.town %> Town, <% if(user.details){ %> <%=
+              user.details.education %>, <%= user.details.profession %>, <%=
+              user.details.maritalStatus %>, <%= user.details.religion %>, <%=
+              user.details.ethnicity %>. Text Describe <%= user.phone%> to get
+              more details about <%= user.name %> <% } %>
+            </p>
+            <% }) %>
+          </div>
+        </div>
+        <button class="btn btn-info btn-lg" type="submit">
+          <i class="fa-solid fa-check"></i> Submit
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+  }
+</script>
+
+<%- include("partials/footer") %>
