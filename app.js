@@ -6,7 +6,7 @@ const port = 3000;
 
 app.use(express.json());
 
-mongoose.connect("mongodb://127.0.0.1:27017/datingDB");
+mongoose.connect(process.env.DB_CONNECTIONS);
 
 let add = 0;
 let sum = 0;
