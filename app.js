@@ -6,7 +6,10 @@ const port = 3000;
 
 app.use(express.json());
 
-mongoose.connect(process.env.DB_CONNECTIONS);
+mongoose.connect("mongodb://127.0.0.1:27017/datingDB");
+
+let add = 0;
+let sum = 0;
 
 const day = new Date();
 const options = {
@@ -323,7 +326,7 @@ app.post("/match", (req, res) => {
             res.app.set("output", output);
             text = `We have ${foundItem.length} ${sex} who match your choice! We will send you details of ${output[0].length} of them shortly.\n
                      To get more details about a ${single} text the number e.g 0720222284. Text NEXT to receive details of the remaining ${sex}`;
-            res.send(text, output[0]);
+            res.send({ text, output: output[0] });
           }
         })
         .catch((error) => {
@@ -349,8 +352,7 @@ app.get("/next", (req, res) => {
     res.redirect("/match");
   } else {
     let number = 0;
-    let add = ++number;
-    res.app.set("add", add);
+    add = ++number;
     let sex = "";
     let single = "";
     if (gender === "Male") {
@@ -366,7 +368,7 @@ app.get("/next", (req, res) => {
       res.send(text);
     } else {
       let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are:  .Text NEXT to receive details of the remaining ${sex}`;
-      res.send(text, output[add]);
+      res.send({ text, output: output[add] });
     }
   }
 });
@@ -376,7 +378,7 @@ app.post("/next", (req, res) => {
   res.app.set("phone", dating);
   output = res.app.get("output");
   gender = res.app.get("sex");
-  sum = res.app.get("add");
+
   if (output === undefined) {
     res.redirect("/match");
   } else if (dating.length === 10) {
@@ -386,7 +388,9 @@ app.post("/next", (req, res) => {
   } else if (sum === undefined) {
     res.redirect("/match");
   } else {
-    let add = ++sum;
+    sum = add + 1;
+    add = sum;
+
     let sex = "";
     let single = "";
     if (gender === "Male") {
@@ -402,7 +406,7 @@ app.post("/next", (req, res) => {
       res.send(text);
     } else {
       let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are: Text NEXT to receive details of the remaining ${sex}`;
-      res.send(text, output[add]);
+      res.send({ text, output: output[sum] });
     }
   }
 });
@@ -437,7 +441,7 @@ app.get("/phone", (req, res) => {
             }
           }
         );
-        res.send(foundItem, text);
+        res.send({ text, foundItem: foundItem });
       })
       .catch((error) => {
         console.log(error);
@@ -512,7 +516,7 @@ app.post("/suitable", (req, res) => {
                     } else {
                       let text = "The interested parties are : ";
                       res.app.set("f", f);
-                      res.send(text, f, suitableName);
+                      res.send({ text, f: f, suitableName });
                     }
                   })
                   .catch((error) => {
