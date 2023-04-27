@@ -1,17 +1,27 @@
 const express = require("express");
 const mongoose = require("mongoose");
+require("dotenv").config();
 const app = express();
 const port = 3000;
 
-app.set("view engine", "ejs");
-app.use(express.static("public"));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
-mongoose.connect("mongodb://127.0.0.1:27017/datingDB");
+mongoose.connect(process.env.DB_CONNECTIONS);
+
+const day = new Date();
+const options = {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+};
+
+const date = day.toLocaleDateString("en-US", options);
 
 const simultaneousSchema = new mongoose.Schema({
   phone: String,
   name: String,
+  dateMatched: String,
 });
 
 const Simultaneous = mongoose.model("Simultaneous", simultaneousSchema);
@@ -22,6 +32,7 @@ const detailsSchema = new mongoose.Schema({
   maritalStatus: String,
   religion: String,
   ethnicity: String,
+  dateCreated: String,
 });
 
 const Detail = mongoose.model("Detail", detailsSchema);
@@ -29,6 +40,7 @@ const Detail = mongoose.model("Detail", detailsSchema);
 const descriptionSchema = new mongoose.Schema({
   options: {
     type: String,
+    dateCreated: String,
   },
 });
 
@@ -41,6 +53,7 @@ const userSchema = new mongoose.Schema({
   gender: String,
   county: String,
   town: String,
+  dateCreated: String,
   details: detailsSchema,
   description: descriptionSchema,
 });
@@ -50,11 +63,11 @@ const User = mongoose.model("User", userSchema);
 app.get("/", (req, res) => {
   let text =
     "Text penzi for activation. Text suitable to see interested parties.";
-  res.render("index", { text: text });
+  res.send(text);
 });
 
 app.post("/", (req, res) => {
-  const feedback = req.body.dating.toLowerCase();
+  const feedback = req.body.dating;
   let text = "";
   if (feedback === "penzi") {
     res.redirect("/registration");
@@ -63,18 +76,18 @@ app.post("/", (req, res) => {
   } else {
     text =
       "Text penzi for activation. Text suitable to see interested parties.";
-    res.render("index", { text: text });
+    res.send(text);
   }
 });
 
 app.get("/registration", (req, res) => {
   let text =
     "Welcome to our dating app. To register text start#name#phonenumber#age#gender#county#town \n E.g. start#John Doe#0745671865#26#Male#Nakuru#Naivasha.";
-  res.render("registartion", { text: text });
+  res.send(text);
 });
 
 app.post("/registration", (req, res) => {
-  const feedback = req.body.dating.toLowerCase();
+  const feedback = req.body.dating;
   const array = feedback.split("#");
   const array2 = array.map((word) => {
     return word[0].toUpperCase() + word.substring(1);
@@ -96,7 +109,7 @@ app.post("/registration", (req, res) => {
         if (foundItem.length >= 1) {
           let text =
             "The name or telephone number is already taken. Please try again  E.g. start#John Doe Amber #0745671865#26#Male#Nakuru#Naivasha";
-          res.render("registartion", { text: text });
+          res.send(text);
         } else {
           const user = new User({
             name: name,
@@ -105,6 +118,7 @@ app.post("/registration", (req, res) => {
             gender: gender,
             county: county,
             town: town,
+            dateCreated: date,
           });
           user
             .save()
@@ -114,19 +128,19 @@ app.post("/registration", (req, res) => {
             .catch((error) => {
               let text =
                 "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha";
-              res.render("registartion", { text: text });
+              res.send(text);
             });
         }
       })
       .catch((error) => {
         let text =
           "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha";
-        res.render("registartion", { text: text });
+        res.send(text);
       });
   } else {
     let text =
       "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha";
-    res.render("registartion", { text: text });
+    res.send(text);
   }
 });
 
@@ -137,7 +151,7 @@ app.get("/details", (req, res) => {
   } else {
     let text = `Your profile has been created successfully ${names}. To add additional details text details#levelOfEducation#profession#maritalStatus#religion#ethnicity 
     \n E.g. details#diploma#driver#single#christian#mijikenda \n to skip type skip`;
-    res.render("details", { text: text });
+    res.send(text);
   }
 });
 
@@ -166,6 +180,7 @@ app.post("/details", (req, res) => {
         maritalStatus: maritalStatus,
         religion: religion,
         ethnicity: ethnicity,
+        dateCreated: date,
       });
 
       detail.save().then(() => {
@@ -181,13 +196,13 @@ app.post("/details", (req, res) => {
             );
             let text =
               "Please input the correct format as displayed in the example E.g. details#diploma#driver#single#christian#mijikenda";
-            res.render("details", { text: text });
+            res.send(text);
           });
       });
     } else {
       let text =
         "Please input the correct format as displayed in the example E.g. details#diploma#driver#single#christian#mijikenda";
-      res.render("details", { text: text });
+      res.send(text);
     }
   }
 });
@@ -198,7 +213,7 @@ app.get("/description", (req, res) => {
     res.redirect("/");
   } else {
     let text = `This is the last stage of registration ${names}. TEXT a brief description of yourself \n starting with the word MYSELF eg MYSELF chocolate, lovely, sexy etc.`;
-    res.render("description", { text: text });
+    res.send(text);
   }
 });
 
@@ -213,6 +228,7 @@ app.post("/description", (req, res) => {
     if (desc) {
       const descriptions = new Description({
         options: desc,
+        dateCreated: date,
       });
       descriptions.save().then(() => {
         console.log("sucessfully inserted descriptions");
@@ -232,20 +248,20 @@ app.post("/description", (req, res) => {
             );
             let text =
               "Please input the correct format as displayed in the example eg MYSELF chocolate, lovely, sexy etc.";
-            res.render("description", { text: text });
+            res.send(text);
           });
       });
     } else {
       let text =
         "Please input the correct format as displayed in the example E.g. MYSELF chocolate, lovely, sexy etc.";
-      res.render("description", { text: text });
+      res.send(text);
     }
   }
 });
 
 app.get("/match", (req, res) => {
   let text = `You are now registered for dating . To search for a MPENZI, \n text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
-  res.render("match", { text: text, foundItem: [], sex: "", next: "" });
+  res.send(text);
 });
 
 app.post("/match", (req, res) => {
@@ -288,14 +304,8 @@ app.post("/match", (req, res) => {
           let text = "";
           let next = "";
           if (foundItem.length === 0) {
-            text = `We have ${foundItem.length} ${sex} who match your choice! Please try again E.g., match#23-25#Kisumu.`;
-            next = `Text NEXT to receive details of the remaining ${sex}`;
-            res.render("match", {
-              text: text,
-              foundItem: foundItem,
-              sex: sex,
-              next: next,
-            });
+            text = `We have ${foundItem.length} ${sex} who match your choice! Please try again E.g., match#23-25#Kisumu. Text NEXT to receive details of the remaining ${sex}`;
+            res.send(text);
           } else {
             const paginate = (foundItem) => {
               itemsPerDisplay = 3;
@@ -312,14 +322,8 @@ app.post("/match", (req, res) => {
             const output = paginate(foundItem);
             res.app.set("output", output);
             text = `We have ${foundItem.length} ${sex} who match your choice! We will send you details of ${output[0].length} of them shortly.\n
-          To get more details about a ${single} text the number e.g 0720222284`;
-            next = `Text NEXT to receive details of the remaining ${sex}`;
-            res.render("match", {
-              text: text,
-              foundItem: output[0],
-              sex: sex,
-              next: next,
-            });
+                     To get more details about a ${single} text the number e.g 0720222284. Text NEXT to receive details of the remaining ${sex}`;
+            res.send(text, output[0]);
           }
         })
         .catch((error) => {
@@ -328,12 +332,12 @@ app.post("/match", (req, res) => {
           );
           let text =
             "Please input the correct format as displayed in the example E.g., match#23-25#Kisumu";
-          res.render("match", { text: text, foundItem: [], sex: "", next: "" });
+          res.send(text);
         });
     } else {
       let text =
         "Please input the correct format as displayed in the example E.g., match#23-25#Kisumu";
-      res.render("match", { text: text, foundItem: [], sex: "", next: "" });
+      res.send(text);
     }
   }
 });
@@ -346,6 +350,7 @@ app.get("/next", (req, res) => {
   } else {
     let number = 0;
     let add = ++number;
+    res.app.set("add", add);
     let sex = "";
     let single = "";
     if (gender === "Male") {
@@ -357,41 +362,31 @@ app.get("/next", (req, res) => {
       single = "gentle man";
     }
     if (add > output.length - 1) {
-      let text = `No more matches found. Thank you.`;
-      let next = `Text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
-      res.render("next", {
-        text: text,
-        foundItem: [],
-        add: 0,
-        noOutput: next,
-      });
+      let text = `No more matches found. Thank you. Text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
+      res.send(text);
     } else {
-      let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are`;
-      let next = `Text NEXT to receive details of the remaining ${sex}`;
-      res.render("next", {
-        text: text,
-        foundItem: output[add],
-        add: add,
-        next: next,
-      });
+      let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are:  .Text NEXT to receive details of the remaining ${sex}`;
+      res.send(text, output[add]);
     }
   }
 });
 
 app.post("/next", (req, res) => {
-  let number = req.body.number.toLowerCase();
   let dating = req.body.dating.toLowerCase();
   res.app.set("phone", dating);
   output = res.app.get("output");
   gender = res.app.get("sex");
+  sum = res.app.get("add");
   if (output === undefined) {
     res.redirect("/match");
   } else if (dating.length === 10) {
     res.redirect("/phone");
   } else if (dating !== "next") {
     res.redirect("/match");
+  } else if (sum === undefined) {
+    res.redirect("/match");
   } else {
-    let add = ++number;
+    let add = ++sum;
     let sex = "";
     let single = "";
     if (gender === "Male") {
@@ -403,23 +398,11 @@ app.post("/next", (req, res) => {
       single = "gentle man";
     }
     if (add > output.length - 1) {
-      let text = `No more matches found Thank you.`;
-      let next = `Text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
-      res.render("next", {
-        text: text,
-        foundItem: [],
-        add: 0,
-        noOutput: next,
-      });
+      let text = `No more matches found Thank you. Text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
+      res.send(text);
     } else {
-      let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are`;
-      let next = `Text NEXT to receive details of the remaining ${sex}`;
-      res.render("next", {
-        text: text,
-        foundItem: output[add],
-        add: add,
-        next: next,
-      });
+      let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are: Text NEXT to receive details of the remaining ${sex}`;
+      res.send(text, output[add]);
     }
   }
 });
@@ -454,12 +437,12 @@ app.get("/phone", (req, res) => {
             }
           }
         );
-        res.render("phone", { foundItem: foundItem, text: text });
+        res.send(foundItem, text);
       })
       .catch((error) => {
         console.log(error);
         let text = "No found user. Thank you";
-        res.render("phone", { foundItem: [], text: text });
+        res.send(text);
       });
   }
 });
@@ -483,12 +466,12 @@ app.get("/describe", (req, res) => {
     } else {
       User.find({ phone: desc })
         .then((foundItem) => {
-          res.render("describe", { foundItem: foundItem, text: "" });
+          res.send(foundItem);
         })
         .catch((error) => {
           console.log(error);
           let text = `Please enter the correct format please eg DESCRIBE 0702556677`;
-          res.render("describe", { foundItem: [], text: text });
+          res.send(text);
         });
     }
   }
@@ -500,7 +483,7 @@ app.post("/describe", (req, res) => {
 
 app.get("/suitable", (req, res) => {
   let text = "Please text your telephone number";
-  res.render("suitable", { text: text, suitableName: "", foundItem: [] });
+  res.send(text);
 });
 
 app.post("/suitable", (req, res) => {
@@ -513,39 +496,23 @@ app.post("/suitable", (req, res) => {
         let suitableName = foundItem[0].name;
         if (foundItem.length < 1) {
           let text = "No phone records found";
-          res.render("suitable", {
-            text: text,
-            foundItem: [],
-            suitableName: "",
-          });
+          res.send(text);
         } else {
           Simultaneous.find({ phone: phoneInputed })
             .then((found) => {
               if (found.length < 1) {
                 let text = "No interested parties found. Thank you.";
-                res.render("suitable", {
-                  text: text,
-                  foundItem: [],
-                  suitableName: "",
-                });
+                res.send(text);
               } else {
                 User.find({ name: found[0].name })
                   .then((f) => {
                     if (f.length < 1) {
                       let text = "No interested parties found. Thank you.";
-                      res.render("suitable", {
-                        text: text,
-                        foundItem: [],
-                        suitableName: "",
-                      });
+                      res.send(text);
                     } else {
                       let text = "The interested parties are : ";
                       res.app.set("f", f);
-                      res.render("suitable", {
-                        text: text,
-                        foundItem: f,
-                        suitableName: suitableName,
-                      });
+                      res.send(text, f, suitableName);
                     }
                   })
                   .catch((error) => {
@@ -560,7 +527,7 @@ app.post("/suitable", (req, res) => {
       })
       .catch(() => {
         let text = "Please input a correct number. Thank you";
-        res.render("suitable", { text: text, foundItem: [], suitableName: "" });
+        res.send(text);
       });
   }
 });
@@ -570,7 +537,7 @@ app.get("/more", (req, res) => {
   if (moreName === undefined) {
     res.redirect("/suitable");
   } else {
-    res.render("more", { foundItem: moreName });
+    res.send(moreName);
   }
 });
 
