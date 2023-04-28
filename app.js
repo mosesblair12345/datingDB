@@ -73,9 +73,9 @@ app.post("/", (req, res) => {
   const feedback = req.body.dating;
   let text = "";
   if (feedback === "penzi") {
-    res.redirect("/registration");
+    res.send("/registration");
   } else if (feedback === "suitable") {
-    res.redirect("/suitable");
+    res.send("/suitable");
   } else {
     text =
       "Text penzi for activation. Text suitable to see interested parties.";
@@ -126,7 +126,7 @@ app.post("/registration", (req, res) => {
           user
             .save()
             .then(() => {
-              res.redirect("/details");
+              res.send("/details");
             })
             .catch((error) => {
               let text =
@@ -150,7 +150,7 @@ app.post("/registration", (req, res) => {
 app.get("/details", (req, res) => {
   names = res.app.get("names");
   if (!names) {
-    res.redirect("/");
+    res.send("/");
   } else {
     let text = `Your profile has been created successfully ${names}. To add additional details text details#levelOfEducation#profession#maritalStatus#religion#ethnicity 
     \n E.g. details#diploma#driver#single#christian#mijikenda \n to skip type skip`;
@@ -191,7 +191,7 @@ app.post("/details", (req, res) => {
         User.updateOne({ name: names }, { details: detail })
           .then(() => {
             console.log("updated record sucessfully");
-            res.redirect("/description");
+            res.send("/description");
           })
           .catch((error) => {
             console.log(
@@ -213,7 +213,7 @@ app.post("/details", (req, res) => {
 app.get("/description", (req, res) => {
   names = res.app.get("names");
   if (!names) {
-    res.redirect("/");
+    res.send("/");
   } else {
     let text = `This is the last stage of registration ${names}. TEXT a brief description of yourself \n starting with the word MYSELF eg MYSELF chocolate, lovely, sexy etc.`;
     res.send(text);
@@ -223,7 +223,7 @@ app.get("/description", (req, res) => {
 app.post("/description", (req, res) => {
   const feedback = req.body.dating.toLowerCase();
   if (feedback === "") {
-    res.redirect("/description");
+    res.send("/description");
   } else {
     names = res.app.get("names");
     const array = feedback.split(" ");
@@ -238,7 +238,7 @@ app.post("/description", (req, res) => {
         User.updateOne({ name: names }, { description: descriptions })
           .then(() => {
             console.log("updated record sucessfully");
-            res.redirect("/match");
+            res.send("/match");
           })
           .catch((error) => {
             console.log(
@@ -272,11 +272,11 @@ app.post("/match", (req, res) => {
   res.app.set("phone", feedback);
   gender = res.app.get("sex");
   if (!gender) {
-    res.redirect("/");
+    res.send("/");
   } else if (feedback === "next") {
-    res.redirect("/next");
+    res.send("/next");
   } else if (feedback.length === 10) {
-    res.redirect("/phone");
+    res.send("/phone");
   } else {
     let sex = "";
     let single = "";
@@ -305,7 +305,6 @@ app.post("/match", (req, res) => {
       })
         .then((foundItem) => {
           let text = "";
-          let next = "";
           if (foundItem.length === 0) {
             text = `We have ${foundItem.length} ${sex} who match your choice! Please try again E.g., match#23-25#Kisumu. Text NEXT to receive details of the remaining ${sex}`;
             res.send(text);
@@ -349,7 +348,7 @@ app.get("/next", (req, res) => {
   gender = res.app.get("sex");
   output = res.app.get("output");
   if (output === undefined) {
-    res.redirect("/match");
+    res.send("/match");
   } else {
     let number = 0;
     add = ++number;
@@ -380,13 +379,13 @@ app.post("/next", (req, res) => {
   gender = res.app.get("sex");
 
   if (output === undefined) {
-    res.redirect("/match");
+    res.send("/match");
   } else if (dating.length === 10) {
-    res.redirect("/phone");
+    res.send("/phone");
   } else if (dating !== "next") {
-    res.redirect("/match");
+    res.send("/match");
   } else if (sum === undefined) {
-    res.redirect("/match");
+    res.send("/match");
   } else {
     sum = add + 1;
     add = sum;
@@ -416,7 +415,7 @@ app.get("/phone", (req, res) => {
   output = res.app.get("output");
   names = res.app.get("names");
   if (output === undefined) {
-    res.redirect("/match");
+    res.send("/match");
   } else {
     User.find({ phone: phone })
       .then((foundItem) => {
@@ -454,19 +453,19 @@ app.get("/phone", (req, res) => {
 app.post("/phone", (req, res) => {
   const feedback = req.body.dating.toLowerCase();
   res.app.set("describe", feedback);
-  res.redirect("/describe");
+  res.send("/describe");
 });
 
 app.get("/describe", (req, res) => {
   output = res.app.get("output");
   if (output === undefined) {
-    res.redirect("/match");
+    res.send("/match");
   } else {
     describe = res.app.get("describe");
     const arr = describe.split(" ");
     const desc = arr[1];
     if (!desc) {
-      res.redirect("/");
+      res.send("/");
     } else {
       User.find({ phone: desc })
         .then((foundItem) => {
@@ -482,7 +481,7 @@ app.get("/describe", (req, res) => {
 });
 
 app.post("/describe", (req, res) => {
-  res.redirect("/");
+  res.send("/");
 });
 
 app.get("/suitable", (req, res) => {
@@ -493,7 +492,7 @@ app.get("/suitable", (req, res) => {
 app.post("/suitable", (req, res) => {
   const phoneInputed = req.body.dating;
   if (phoneInputed === "yes") {
-    res.redirect("/more");
+    res.send("/more");
   } else {
     User.find({ phone: phoneInputed })
       .then((foundItem) => {
@@ -539,14 +538,14 @@ app.post("/suitable", (req, res) => {
 app.get("/more", (req, res) => {
   moreName = res.app.get("f");
   if (moreName === undefined) {
-    res.redirect("/suitable");
+    res.send("/suitable");
   } else {
     res.send(moreName);
   }
 });
 
 app.post("/more", (req, res) => {
-  res.redirect("/");
+  res.send("/");
 });
 
 app.listen(port, () => {
