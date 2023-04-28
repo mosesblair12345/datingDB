@@ -6,10 +6,14 @@ const port = 3000;
 
 app.use(express.json());
 
-mongoose.connect(process.env.DB_CONNECTIONS);
+mongoose.connect("mongodb://127.0.0.1:27017/datingDB");
 
 let add = 0;
-let sum = 0;
+let title = "";
+let sex = "";
+let perfectMatch = [];
+let interestedPartner = [];
+let interestedName = "";
 
 const day = new Date();
 const options = {
@@ -63,109 +67,123 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-app.get("/", (req, res) => {
-  let text =
-    "Text penzi for activation. Text suitable to see interested parties.";
-  res.send(text);
-});
-
-app.post("/", (req, res) => {
-  const feedback = req.body.dating;
-  let text = "";
-  if (feedback === "penzi") {
-    res.send("/registration");
-  } else if (feedback === "suitable") {
-    res.send("/suitable");
-  } else {
-    text =
-      "Text penzi for activation. Text suitable to see interested parties.";
-    res.send(text);
+app.post("/dating", (req, res) => {
+  let message = req.body.message.toLowerCase();
+  if (message === "") {
+    res.send(
+      "To register type penzi to see interested parties type suitable your phone number eg suitable 0745671868"
+    );
+  } else if (message === "penzi") {
+    welcome();
+  } else if (message.startsWith("start")) {
+    registration(message);
+  } else if (message.startsWith("skip")) {
+    skip();
+  } else if (message.startsWith("details")) {
+    details(message);
+  } else if (message.startsWith("myself")) {
+    description(message);
+  } else if (message.startsWith("match")) {
+    match(message);
+  } else if (message.startsWith("next")) {
+    next();
+  } else if (message.length === 10) {
+    phone(message);
+  } else if (message.startsWith("describe")) {
+    describe(message);
+  } else if (message.startsWith("suitable")) {
+    suitable(message);
+  } else if (message.startsWith("yes")) {
+    more();
   }
 });
 
-app.get("/registration", (req, res) => {
-  let text =
-    "Welcome to our dating app. To register text start#name#phonenumber#age#gender#county#town \n E.g. start#John Doe#0745671865#26#Male#Nakuru#Naivasha.";
-  res.send(text);
-});
-
-app.post("/registration", (req, res) => {
-  const feedback = req.body.dating;
-  const array = feedback.split("#");
-  const array2 = array.map((word) => {
-    return word[0].toUpperCase() + word.substring(1);
+// if penzi call this function
+const welcome = () => {
+  app.post((req, res) => {
+    res.send(
+      "Welcome to our dating app. To register text start#name#phonenumber#age#gender#county#town \n E.g. start#John Doe#0745671865#26#Male#Nakuru#Naivasha. To see interested parties text suitable your number eg suitable 0745671868."
+    );
   });
-  const name = array2[1];
-  const phone = array2[2];
-  const age = array2[3];
-  const gender = array2[4];
-  const county = array2[5];
-  const town = array2[6];
+};
 
-  res.app.set("names", name);
-  res.app.set("sex", gender);
+// if message starts with start
+const registration = (message) => {
+  app.post((res) => {
+    const feedback = message;
+    const array = feedback.split("#");
+    const array2 = array.map((word) => {
+      return word[0].toUpperCase() + word.substring(1);
+    });
+    const name = array2[1];
+    const phone = array2[2];
+    const age = array2[3];
+    const gender = array2[4];
+    const county = array2[5];
+    const town = array2[6];
 
-  // res.redirect("/details");
-  if (name && phone && age && gender && county && town) {
-    User.find({ $or: [{ phone: phone }, { name: name }] })
-      .then((foundItem) => {
-        if (foundItem.length >= 1) {
-          let text =
-            "The name or telephone number is already taken. Please try again  E.g. start#John Doe Amber #0745671865#26#Male#Nakuru#Naivasha";
-          res.send(text);
-        } else {
-          const user = new User({
-            name: name,
-            phone: phone,
-            age: age,
-            gender: gender,
-            county: county,
-            town: town,
-            dateCreated: date,
-          });
-          user
-            .save()
-            .then(() => {
-              res.send("/details");
-            })
-            .catch((error) => {
-              let text =
-                "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha";
-              res.send(text);
+    title = name;
+    sex = gender;
+
+    // res.redirect("/details");
+    if (name && phone && age && gender && county && town) {
+      User.find({ $or: [{ phone: phone }, { name: name }] })
+        .then((foundItem) => {
+          if (foundItem.length >= 1) {
+            res.send(
+              "The name or telephone number is already taken. Please try again  E.g. start#John Doe Amber #0745671865#26#Male#Nakuru#Naivasha"
+            );
+          } else {
+            const user = new User({
+              name: name,
+              phone: phone,
+              age: age,
+              gender: gender,
+              county: county,
+              town: town,
+              dateCreated: date,
             });
-        }
-      })
-      .catch((error) => {
-        let text =
-          "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha";
-        res.send(text);
-      });
-  } else {
-    let text =
-      "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha";
-    res.send(text);
-  }
-});
+            user
+              .save()
+              .then(() => {
+                res.send(`Your profile has been created successfully ${title}. To add additional details text details#levelOfEducation#profession#maritalStatus#religion#ethnicity 
+                   \n E.g. details#diploma#driver#single#christian#mijikenda \n to skip type skip`);
+              })
+              .catch((error) => {
+                res.send(
+                  "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha"
+                );
+              });
+          }
+        })
+        .catch((error) => {
+          res.send(
+            "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha"
+          );
+        });
+    } else {
+      res.send(
+        "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha"
+      );
+    }
+  });
+};
 
-app.get("/details", (req, res) => {
-  names = res.app.get("names");
-  if (!names) {
-    res.send("/");
-  } else {
-    let text = `Your profile has been created successfully ${names}. To add additional details text details#levelOfEducation#profession#maritalStatus#religion#ethnicity 
-    \n E.g. details#diploma#driver#single#christian#mijikenda \n to skip type skip`;
-    res.send(text);
-  }
-});
+// if message startswith skip
+const skip = () => {
+  res.send(
+    `You are now registered for dating . To search for a MPENZI, \n text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`
+  );
+};
 
-app.post("/details", (req, res) => {
-  const feedback = req.body.dating.toLowerCase();
-  names = res.app.get("names");
-  if (feedback === "skip") {
-    res.redirect("/match");
-  } else if (feedback === "") {
-    res.redirect("/details");
+// if message starts with details
+const details = (message) => {
+  if (!title) {
+    res.send(
+      "Please input the correct format as displayed in the example E.g. start#John Doe Amber#0745671865#26#Male#Nakuru#Naivasha"
+    );
   } else {
+    const feedback = message;
     const array = feedback.split("#");
     const array2 = array.map((word) => {
       return word[0].toUpperCase() + word.substring(1);
@@ -187,45 +205,37 @@ app.post("/details", (req, res) => {
       });
 
       detail.save().then(() => {
-        console.log("details created successfully");
         User.updateOne({ name: names }, { details: detail })
           .then(() => {
-            console.log("updated record sucessfully");
-            res.send("/description");
+            res.send(
+              `This is the last stage of registration ${title}. TEXT a brief description of yourself \n starting with the word MYSELF eg MYSELF chocolate, lovely, sexy etc.`
+            );
           })
           .catch((error) => {
             console.log(
               "There was an error during update of details please check your code"
             );
-            let text =
-              "Please input the correct format as displayed in the example E.g. details#diploma#driver#single#christian#mijikenda";
-            res.send(text);
+            res.send(
+              "Please input the correct format as displayed in the example E.g. details#diploma#driver#single#christian#mijikenda"
+            );
           });
       });
     } else {
-      let text =
-        "Please input the correct format as displayed in the example E.g. details#diploma#driver#single#christian#mijikenda";
-      res.send(text);
+      res.send(
+        "Please input the correct format as displayed in the example E.g. details#diploma#driver#single#christian#mijikenda"
+      );
     }
   }
-});
+};
 
-app.get("/description", (req, res) => {
-  names = res.app.get("names");
-  if (!names) {
-    res.send("/");
+// if message starts with MYSELF
+const description = (message) => {
+  if (!title) {
+    res.send(
+      "Welcome to our dating app. To register text start#name#phonenumber#age#gender#county#town \n E.g. start#John Doe#0745671865#26#Male#Nakuru#Naivasha."
+    );
   } else {
-    let text = `This is the last stage of registration ${names}. TEXT a brief description of yourself \n starting with the word MYSELF eg MYSELF chocolate, lovely, sexy etc.`;
-    res.send(text);
-  }
-});
-
-app.post("/description", (req, res) => {
-  const feedback = req.body.dating.toLowerCase();
-  if (feedback === "") {
-    res.send("/description");
-  } else {
-    names = res.app.get("names");
+    const feedback = message;
     const array = feedback.split(" ");
     const desc = array[1];
     if (desc) {
@@ -234,11 +244,11 @@ app.post("/description", (req, res) => {
         dateCreated: date,
       });
       descriptions.save().then(() => {
-        console.log("sucessfully inserted descriptions");
         User.updateOne({ name: names }, { description: descriptions })
           .then(() => {
-            console.log("updated record sucessfully");
-            res.send("/match");
+            res.send(
+              `You are now registered for dating . To search for a MPENZI, \n text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`
+            );
           })
           .catch((error) => {
             console.log(
@@ -249,43 +259,35 @@ app.post("/description", (req, res) => {
             console.log(
               "There was an error during description record insertion please check your code"
             );
-            let text =
-              "Please input the correct format as displayed in the example eg MYSELF chocolate, lovely, sexy etc.";
-            res.send(text);
+            res.send(
+              "Please input the correct format as displayed in the example eg MYSELF chocolate, lovely, sexy etc."
+            );
           });
       });
     } else {
-      let text =
-        "Please input the correct format as displayed in the example E.g. MYSELF chocolate, lovely, sexy etc.";
-      res.send(text);
+      res.send(
+        "Please input the correct format as displayed in the example E.g. MYSELF chocolate, lovely, sexy etc."
+      );
     }
   }
-});
+};
 
-app.get("/match", (req, res) => {
-  let text = `You are now registered for dating . To search for a MPENZI, \n text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
-  res.send(text);
-});
-
-app.post("/match", (req, res) => {
-  const feedback = req.body.dating.toLowerCase();
-  res.app.set("phone", feedback);
-  gender = res.app.get("sex");
-  if (!gender) {
-    res.send("/");
-  } else if (feedback === "next") {
-    res.send("/next");
-  } else if (feedback.length === 10) {
-    res.send("/phone");
+// if message starts with match
+const match = (message) => {
+  const feedback = message;
+  if (!sex) {
+    res.send(
+      "Text penzi for activation. Text suitable to see interested parties."
+    );
   } else {
-    let sex = "";
+    let gender = "";
     let single = "";
-    if (gender === "Male") {
-      sex = "ladies";
+    if (sex === "Male") {
+      gender = "ladies";
       single = "lady";
     }
-    if (gender === "Female") {
-      sex = "gentle mens";
+    if (sex === "Female") {
+      gender = "gentle mens";
       single = "gentle man";
     }
     const arr = feedback.split(/[#-]/);
@@ -304,10 +306,10 @@ app.post("/match", (req, res) => {
         gender: { $ne: gender },
       })
         .then((foundItem) => {
-          let text = "";
           if (foundItem.length === 0) {
-            text = `We have ${foundItem.length} ${sex} who match your choice! Please try again E.g., match#23-25#Kisumu. Text NEXT to receive details of the remaining ${sex}`;
-            res.send(text);
+            res.send(
+              `We have ${foundItem.length} ${gender} who match your choice! Please try again E.g., match#23-25#Kisumu.`
+            );
           } else {
             const paginate = (foundItem) => {
               itemsPerDisplay = 3;
@@ -322,150 +324,106 @@ app.post("/match", (req, res) => {
               return newFoundItems;
             };
             const output = paginate(foundItem);
-            res.app.set("output", output);
-            text = `We have ${foundItem.length} ${sex} who match your choice! We will send you details of ${output[0].length} of them shortly.\n
-                     To get more details about a ${single} text the number e.g 0720222284. Text NEXT to receive details of the remaining ${sex}`;
-            res.send({ text, output: output[0] });
+            perfectMatch = output;
+            let text = `We have ${foundItem.length} ${gender} who match your choice! We will send you details of ${perfectMatch[0].length} of them shortly.\n
+                          To get more details about a ${gender} text the number e.g 0720222284. Text NEXT to receive details of the remaining ${gender}`;
+            res.send({ text, output: perfectMatch[0] });
           }
         })
         .catch((error) => {
           console.log(
             "there was an error during match ouput request from database please check your code"
           );
-          let text =
-            "Please input the correct format as displayed in the example E.g., match#23-25#Kisumu";
-          res.send(text);
+          res.send(
+            "Please input the correct format as displayed in the example E.g., match#23-25#Kisumu"
+          );
         });
     } else {
-      let text =
-        "Please input the correct format as displayed in the example E.g., match#23-25#Kisumu";
-      res.send(text);
+      res.send(
+        "Please input the correct format as displayed in the example E.g., match#23-25#Kisumu"
+      );
     }
   }
-});
+};
 
-app.get("/next", (req, res) => {
-  gender = res.app.get("sex");
-  output = res.app.get("output");
-  if (output === undefined) {
-    res.send("/match");
+// if message starts with next
+const next = () => {
+  if (perfectMatch === undefined) {
+    res.send("Please try again E.g., match#23-25#Kisumu.");
+  } else if (add === undefined) {
+    res.send("Please try again E.g., match#23-25#Kisumu.");
   } else {
-    let number = 0;
-    add = ++number;
-    let sex = "";
+    add = add + 1;
+
+    let gender = "";
     let single = "";
-    if (gender === "Male") {
-      sex = "ladies";
+    if (sex === "Male") {
+      gender = "ladies";
       single = "lady";
     }
-    if (gender === "Female") {
-      sex = "gentle mens";
+    if (sex === "Female") {
+      gender = "gentle mens";
       single = "gentle man";
     }
     if (add > output.length - 1) {
-      let text = `No more matches found. Thank you. Text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
-      res.send(text);
+      res.send(
+        `No more matches found. Thank you. Text match#age#town and meet the person of your dreams. E.g., match#23-25#Kisumu`
+      );
     } else {
-      let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are:  .Text NEXT to receive details of the remaining ${sex}`;
-      res.send({ text, output: output[add] });
+      let text = `To get more details about a ${single}, text the  number e.g., 0722010203. The remaining ${gender} are:  .Text NEXT to receive details of the remaining ${gender}`;
+      res.send({ text, output: perfectMatch[add] });
     }
   }
-});
+};
 
-app.post("/next", (req, res) => {
-  let dating = req.body.dating.toLowerCase();
-  res.app.set("phone", dating);
-  output = res.app.get("output");
-  gender = res.app.get("sex");
-
-  if (output === undefined) {
-    res.send("/match");
-  } else if (dating.length === 10) {
-    res.send("/phone");
-  } else if (dating !== "next") {
-    res.send("/match");
-  } else if (sum === undefined) {
-    res.send("/match");
+// if message.length === 10
+const phone = (message) => {
+  if (perfectMatch === undefined) {
+    res.send("Please try again E.g., match#23-25#Kisumu.");
   } else {
-    sum = add + 1;
-    add = sum;
-
-    let sex = "";
-    let single = "";
-    if (gender === "Male") {
-      sex = "ladies";
-      single = "lady";
-    }
-    if (gender === "Female") {
-      sex = "gentle mens";
-      single = "gentle man";
-    }
-    if (add > output.length - 1) {
-      let text = `No more matches found Thank you. Text match#age#town and meet the person of your dreams.\n E.g., match#23-25#Kisumu`;
-      res.send(text);
-    } else {
-      let text = `To get more details about a ${single}, text the  number e.g., 0722010203. \n The remaining ${sex} are: Text NEXT to receive details of the remaining ${sex}`;
-      res.send({ text, output: output[sum] });
-    }
-  }
-});
-
-app.get("/phone", (req, res) => {
-  phone = res.app.get("phone");
-  output = res.app.get("output");
-  names = res.app.get("names");
-  if (output === undefined) {
-    res.send("/match");
-  } else {
-    User.find({ phone: phone })
+    User.find({ phone: message })
       .then((foundItem) => {
-        let text = "The requested match is: ";
-        Simultaneous.find({ $and: [{ phone: phone }, { name: names }] }).then(
-          (found) => {
-            if (found.length >= 1) {
-              console.log("already exists");
-            } else {
-              const sim = new Simultaneous({
-                phone: phone,
-                name: names,
+        interestedName = foundItem.name;
+        Simultaneous.find({
+          $and: [{ phone: message }, { name: interestedName }],
+        }).then((found) => {
+          if (found.length >= 1) {
+            console.log("already exists");
+          } else {
+            const sim = new Simultaneous({
+              phone: message,
+              name: interestedName,
+            });
+            sim
+              .save()
+              .then(() => {
+                console.log("saved simultaneous sucessfully");
+              })
+              .catch((error) => {
+                console.log(error);
               });
-              sim
-                .save()
-                .then(() => {
-                  console.log("saved simultaneous sucessfully");
-                })
-                .catch((error) => {
-                  console.log(error);
-                });
-            }
           }
-        );
+        });
+        let text =
+          "The requested match is: Send describe the persons phone number to get more details about ${interestedName}. eg describe 0745671868";
         res.send({ text, foundItem: foundItem });
       })
       .catch((error) => {
         console.log(error);
-        let text = "No found user. Thank you";
-        res.send(text);
+        res.send("No found user. Thank you");
       });
   }
-});
+};
 
-app.post("/phone", (req, res) => {
-  const feedback = req.body.dating.toLowerCase();
-  res.app.set("describe", feedback);
-  res.send("/describe");
-});
-
-app.get("/describe", (req, res) => {
-  output = res.app.get("output");
-  if (output === undefined) {
-    res.send("/match");
+// if message starts with describe
+const describe = (message) => {
+  if (perfectMatch === undefined) {
+    res.send("Please try again E.g., match#23-25#Kisumu.");
   } else {
-    describe = res.app.get("describe");
-    const arr = describe.split(" ");
+    const arr = message.split(" ");
     const desc = arr[1];
     if (!desc) {
-      res.send("/");
+      res.send("please input the correct format eg describe 0745671868");
     } else {
       User.find({ phone: desc })
         .then((foundItem) => {
@@ -473,80 +431,76 @@ app.get("/describe", (req, res) => {
         })
         .catch((error) => {
           console.log(error);
-          let text = `Please enter the correct format please eg DESCRIBE 0702556677`;
-          res.send(text);
+          res.send(
+            `Please enter the correct format please eg DESCRIBE 0702556677`
+          );
         });
     }
   }
-});
+};
 
-app.post("/describe", (req, res) => {
-  res.send("/");
-});
+// if message starts with suitable
+const suitable = (message) => {
+  const arr = message.split(" ");
+  const phoneInputed = arr[1];
+  User.find({ phone: phoneInputed })
+    .then((foundItem) => {
+      let suitableName = foundItem[0].name;
+      if (foundItem.length < 1) {
+        res.send(
+          "No phone record found. Please try again e.g suitable 0745671868"
+        );
+      } else {
+        Simultaneous.find({ phone: phoneInputed })
+          .then((found) => {
+            if (found.length < 1) {
+              res.send(
+                "No interested parties found. Thank you. you try again eg suitable 0745671868"
+              );
+            } else {
+              User.find({ name: found[0].name })
+                .then((f) => {
+                  if (f.length < 1) {
+                    res.send(
+                      "No interested parties found. Thank you. Please try again e.g suitable 0745671868"
+                    );
+                  } else {
+                    let text =
+                      "The interested parties are : .Type yes to see more about the user";
+                    interestedPartner = f;
+                    res.send({
+                      text,
+                      interestedPartner: interestedPartner,
+                      suitableName,
+                    });
+                  }
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+    })
+    .catch(() => {
+      res.send(
+        "Please input a correct number. Thank you. e.g suitable 0745671868"
+      );
+    });
+};
 
-app.get("/suitable", (req, res) => {
-  let text = "Please text your telephone number";
-  res.send(text);
-});
-
-app.post("/suitable", (req, res) => {
-  const phoneInputed = req.body.dating;
-  if (phoneInputed === "yes") {
-    res.send("/more");
-  } else {
-    User.find({ phone: phoneInputed })
-      .then((foundItem) => {
-        let suitableName = foundItem[0].name;
-        if (foundItem.length < 1) {
-          let text = "No phone records found";
-          res.send(text);
-        } else {
-          Simultaneous.find({ phone: phoneInputed })
-            .then((found) => {
-              if (found.length < 1) {
-                let text = "No interested parties found. Thank you.";
-                res.send(text);
-              } else {
-                User.find({ name: found[0].name })
-                  .then((f) => {
-                    if (f.length < 1) {
-                      let text = "No interested parties found. Thank you.";
-                      res.send(text);
-                    } else {
-                      let text = "The interested parties are : ";
-                      res.app.set("f", f);
-                      res.send({ text, f: f, suitableName });
-                    }
-                  })
-                  .catch((error) => {
-                    console.log(error);
-                  });
-              }
-            })
-            .catch((error) => {
-              console.log(error);
-            });
-        }
-      })
-      .catch(() => {
-        let text = "Please input a correct number. Thank you";
-        res.send(text);
-      });
-  }
-});
-
-app.get("/more", (req, res) => {
-  moreName = res.app.get("f");
+// if message starts with yes
+const more = () => {
+  moreName = interestedPartner;
   if (moreName === undefined) {
-    res.send("/suitable");
+    res.send("Please try again e.g suitable 0745671868");
   } else {
     res.send(moreName);
   }
-});
-
-app.post("/more", (req, res) => {
-  res.send("/");
-});
+};
 
 app.listen(port, () => {
   console.log(`i am listening at port ${port}`);
